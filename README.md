@@ -2,7 +2,7 @@ Bluefruit BLE AWS Connecting App
 ================================
 
 Based on the Bluefruit LE Connect Andriod application, this app, when completed, will be capable of receiving UART 
-communications over BLE (802.11.4) and upload this data to Amazon Web Service's DynamoDB, where it can be processed at the users request.
+communications over BLE (802.15.4) and upload this data to Amazon Web Service's DynamoDB, where it can be processed at the users request.
 
 Current functionality of the app includes:
  - Connecting to beacon BLE devices advertising connection
