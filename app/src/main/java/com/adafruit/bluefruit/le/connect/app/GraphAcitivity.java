@@ -20,11 +20,9 @@ public class GraphAcitivity extends AppCompatActivity {
     LineChart lineChart;
     ArrayList<ILineDataSet> lineDataSets;
     static String test = "123,234,222,333,444,555,666,777,888,1,2,3,41,4,521,35,2,234,234,2342,34,234";
-    ArrayList<String> vData, cData;
-    String[] xaxes;
-    ArrayList<Entry> dataset;
-    String voltage = "Voltage";
-    String current = "Current";
+    ArrayList<String> data_1, data_2;
+    String value_1 = "value_1";
+    String value_2 = "value_2";
 
 
     @Override
@@ -32,41 +30,34 @@ public class GraphAcitivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_graph_acitivity);
 
-        lineChart = (LineChart)findViewById(R.id.linechart);
+        lineChart = findViewById(R.id.linechart);
         lineDataSets = new ArrayList<>();
         Intent intent = getIntent();
-        vData = intent.getStringArrayListExtra("Vdata");
-        cData = intent.getStringArrayListExtra("Cdata");
+        data_1 = intent.getStringArrayListExtra("Vdata");
+        data_2 = intent.getStringArrayListExtra("Cdata");
 
-        Log.d("vData in Graph : ",vData.toString());
-        Log.d("cData in Graph : ",cData.toString());
+        Log.d("data_1 in Graph : ", data_1.toString());
+        Log.d("data_2 in Graph : ", data_2.toString());
 
-        ArrayList<LineDataSet> vdatasets = makingDataSet(vData,voltage);
-        ArrayList<LineDataSet> cdatasets = makingDataSet(cData,current);
+        ArrayList<LineDataSet> dataset_1 = makingDataSet(data_1,value_1);
+        ArrayList<LineDataSet> dataset_2 = makingDataSet(data_2,value_2);
 
-        ArrayList<ILineDataSet> totaldatsets = new ArrayList<>();
-        for(int i = 0;i<vdatasets.size();i++){
-            totaldatsets.add(vdatasets.get(i));
-        }
-        for(int i = 0;i<cdatasets.size();i++){
-            totaldatsets.add(cdatasets.get(i));
-        }
+        ArrayList<ILineDataSet> totaldatasets = new ArrayList<>();
+        totaldatasets.addAll(dataset_1);
+        totaldatasets.addAll(dataset_2);
 
-        lineChart.setData(new LineData(totaldatsets));
+        lineChart.setData(new LineData(totaldatasets));
 
 
     }
-    public void update(String msg){
+    public void update(){
         String[] con = test.split(",");
         ArrayList<Entry> ndataset = new ArrayList<>();
 
         for(int i = 0;i<con.length;i++){
             ndataset.add(new Entry(i,Integer.parseInt(con[i])));
-
-
         }
         drawlineChart(ndataset);
-
     }
 
     public void drawlineChart(ArrayList<Entry> dataset){
@@ -102,10 +93,10 @@ public class GraphAcitivity extends AppCompatActivity {
 
             LineDataSet linedataset = new LineDataSet(ndataset,name+ " "+Integer.toString(i+1));
             linedataset.setDrawCircles(false);
-            if(name.equals(current)) {
+            if(name.equals(value_2)) {
                 linedataset.setColor(Color.RED);
             }
-            if(name.equals(voltage)){
+            if(name.equals(value_1)){
                 linedataset.setColor(Color.BLUE);
             }
             result.add(linedataset);

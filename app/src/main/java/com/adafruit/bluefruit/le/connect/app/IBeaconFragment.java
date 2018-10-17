@@ -22,9 +22,6 @@ import java.util.UUID;
 
 
 public class IBeaconFragment extends Fragment {
-    // Log
-    private final static String TAG = IBeaconFragment.class.getSimpleName();
-
     // Constants
     private final static boolean kPersistValues = true;
     private final static String kPreferences = "IBeaconFragment_prefs";

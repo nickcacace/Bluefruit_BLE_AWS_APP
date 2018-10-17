@@ -1,6 +1,5 @@
 package com.adafruit.bluefruit.le.connect.app;
 
-import android.app.AlertDialog;
 import android.app.Fragment;
 import android.app.FragmentManager;
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -48,13 +47,11 @@ import java.util.ArrayList;
 import java.util.Date;
 
 public class UartActivity extends UartInterfaceActivity implements MqttManager.MqttManagerListener {
-    //DataType for Voltage and Current
-
-    String Voltage = "V";
-    String Current = "C";
+    String value_1 = "value_1";
+    String value_2 = "value_2";
     String None = "None";
-    String DataType = "None";
-    ArrayList<String> vData, cData;
+    String DataType = None;
+    ArrayList<String> data_1, data_2;
 
     // Log
     private final static String TAG = UartActivity.class.getSimpleName();
@@ -131,8 +128,8 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         restoreRetainedDataFragment();
 
         //Making List of voltage and current
-        vData = new ArrayList<>();
-        cData = new ArrayList<>();
+        data_1 = new ArrayList<>();
+        data_2 = new ArrayList<>();
 
         // Get default theme colors
         TypedValue typedValue = new TypedValue();
@@ -143,17 +140,17 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         mRxColor = typedValue.data;
 
         // UI
-        mBufferListView = (ListView) findViewById(R.id.bufferListView);
+        mBufferListView = findViewById(R.id.bufferListView);
         mBufferListAdapter = new TimestampListAdapter(this, R.layout.layout_uart_datachunkitem);
         mBufferListView.setAdapter(mBufferListAdapter);
         mBufferListView.setDivider(null);
 
-        mBufferTextView = (EditText) findViewById(R.id.bufferTextView);
+        mBufferTextView = findViewById(R.id.bufferTextView);
         if (mBufferTextView != null) {
             mBufferTextView.setKeyListener(null);     // make it not editable
         }
 
-        mSendEditText = (EditText) findViewById(R.id.sendEditText);
+        mSendEditText = findViewById(R.id.sendEditText);
         mSendEditText.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView textView, int actionId, KeyEvent keyEvent) {
@@ -174,8 +171,8 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
             }
         });
 
-        mSentBytesTextView = (TextView) findViewById(R.id.sentBytesTextView);
-        mReceivedBytesTextView = (TextView) findViewById(R.id.receivedBytesTextView);
+        mSentBytesTextView = findViewById(R.id.sentBytesTextView);
+        mReceivedBytesTextView = findViewById(R.id.receivedBytesTextView);
 
         // Read shared preferences
         maxPacketsToPaintAsText = PreferencesFragment.getUartTextMaxPackets(this);
@@ -287,6 +284,7 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         // Send to uart
         if (!wasReceivedFromMqtt || settings.getSubscribeBehaviour() == MqttSettings.kSubscribeBehaviour_Transmit) {
             sendData(data);
+            //noinspection NonAtomicOperationOnVolatileField
             mSentBytes += data.length();
         }
 
@@ -358,29 +356,10 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         updateUI();
     }
 
-    public void onClickShare(View view) {
-        String textToSend = mBufferTextView.getText().toString(); // (mShowDataInHexFormat ? mHexSpanBuffer : mAsciiSpanBuffer).toString();
-
-        if (textToSend.length() > 0) {
-
-            Intent sendIntent = new Intent();
-            sendIntent.setAction(Intent.ACTION_SEND);
-            sendIntent.putExtra(Intent.EXTRA_TEXT, textToSend);
-            sendIntent.putExtra(Intent.EXTRA_SUBJECT, getString(R.string.uart_share_subject));     // subject will be used if sent to an email app
-            sendIntent.setType("text/*");       // Note: don't use text/plain because dropbox will not appear as destination
-            // startActivity(sendIntent);
-            startActivity(Intent.createChooser(sendIntent, getResources().getText(R.string.uart_sharechooser_title)));      // Always show the app-chooser
-        } else {
-            new AlertDialog.Builder(this)
-                    .setMessage(getString(R.string.uart_share_empty))
-                    .setPositiveButton(android.R.string.ok, null)
-                    .show();
-        }
-    }
     public void onClickGraph(View view){
         Intent intent = new Intent(UartActivity.this,GraphAcitivity.class);
-        intent.putExtra("Vdata", vData);
-        intent.putExtra("Cdata",cData);
+        intent.putExtra("Xdata", data_1);
+        intent.putExtra("Ydata", data_2);
         startActivity(intent);
     }
 
@@ -577,17 +556,6 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
     // endregion
 
     // region BleManagerListener
-    /*
-    @Override
-    public void onConnected() {
-
-    }
-
-    @Override
-    public void onConnecting() {
-
-    }
-*/
     @Override
     public void onDisconnected() {
         super.onDisconnected();
@@ -641,18 +609,6 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         }
     }
 
-
-/*
-    @Override
-    public void onDataAvailable(BluetoothGattDescriptor descriptor) {
-
-    }
-
-    @Override
-    public void onReadRemoteRssi(int rssi) {
-
-    }
-    */
     // endregion
 
     private void addTextToSpanBuffer(SpannableStringBuilder spanBuffer, String text, int color) {
@@ -687,36 +643,37 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
                 }
 
                 // Log.d(TAG, "update packets: "+(bufferSize-mDataBufferLastSize));
-                String output = "";
+                StringBuilder outputBuilder = new StringBuilder();
                 for (int i = mDataBufferLastSize; i < bufferSize; i++) {
                     final UartDataChunk dataChunk = mDataBuffer.get(i);
                     final boolean isRX = dataChunk.getMode() == UartDataChunk.TRANSFERMODE_RX;
                     final byte[] bytes = dataChunk.getData();
                     final String formattedData = mShowDataInHexFormat ? BleUtils.bytesToHex2(bytes) : BleUtils.bytesToText(bytes, true);
-                    output = output + formattedData;
+                    outputBuilder.append(formattedData);
 
                     addTextToSpanBuffer(mTextSpanBuffer, formattedData, isRX ? mRxColor : mTxColor);
                 }
+                String output = outputBuilder.toString();
                 Log.d("is it recv data? : ",output);
 
-                if(DataType.equals(Voltage)){
-                    vData.add(output);
+                if(DataType.equals(value_1)){
+                    data_1.add(output);
                     DataType = None;
-                    Log.d("vData is added : ",output);
+                    Log.d("data_1 is added : ",output);
                 }
-                if(DataType.equals(Current)){
-                    cData.add(output);
+                if(DataType.equals(value_2)){
+                    data_2.add(output);
                     DataType = None;
-                    Log.d("cData is added : ",output);
+                    Log.d("data_2 is added : ",output);
                 }
 
-                if(output.contains((Voltage))){
-                    DataType = Voltage;
-                    Log.d("DataType Change to : ", Voltage);
+                if(output.contains((value_1))){
+                    DataType = value_1;
+                    Log.d("DataType Change to : ", value_1);
                 }
-                if(output.contains(Current)){
-                    DataType = Current;
-                    Log.d("DataType Change to : ", Current);
+                if(output.contains(value_2)){
+                    DataType = value_2;
+                    Log.d("DataType Change to : ", value_2);
                 }
 
                 mDataBufferLastSize = mDataBuffer.size();
