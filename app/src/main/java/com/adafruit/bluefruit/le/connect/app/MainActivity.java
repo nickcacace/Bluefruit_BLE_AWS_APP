@@ -1,8 +1,6 @@
 package com.adafruit.bluefruit.le.connect.app;
 
 import android.Manifest;
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -27,15 +25,10 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.PopupMenu;
-import android.text.Editable;
 import android.text.Html;
 import android.text.Spanned;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
@@ -44,17 +37,13 @@ import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.ExpandableListView;
-import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ScrollView;
-import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.adafruit.bluefruit.le.connect.R;
-import com.adafruit.bluefruit.le.connect.app.settings.SettingsActivity;
 import com.adafruit.bluefruit.le.connect.app.update.FirmwareUpdater;
 import com.adafruit.bluefruit.le.connect.app.update.ReleasesParser;
 import com.adafruit.bluefruit.le.connect.ble.BleDevicesScanner;
@@ -69,7 +58,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -85,11 +73,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
 
-    private final static String kPreferences = "MainActivity_prefs";
-    private final static String kPreferences_filtersPanelOpen = "filtersPanelOpen";
-
-    // Components
-    private final static int kComponentsNameId = R.string.scan_connectservice_uart;
 
     // Activity request codes (used for onActivityResult)
     private static final int kActivityRequestCode_EnableBluetooth = 1;
@@ -105,7 +88,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     private ScrollView mDevicesScrollView;
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private AlertDialog mConnectingDialog;
-    private CheckBox mFiltersUartCheckBox;
 
     // Data
     private BleManager mBleManager;
@@ -133,7 +115,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         mPeripheralList = new PeripheralList();
 
         // UI
-        mScannedDevicesListView = (ExpandableHeightExpandableListView) findViewById(R.id.scannedDevicesListView);
+        mScannedDevicesListView = findViewById(R.id.scannedDevicesListView);
         mScannedDevicesAdapter = new ExpandableListAdapter();
         mScannedDevicesListView.setAdapter(mScannedDevicesAdapter);
         mScannedDevicesListView.setExpanded(true);
@@ -144,18 +126,18 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             }
         });
 
-        mScanButton = (Button) findViewById(R.id.scanButton);
+        mScanButton = findViewById(R.id.scanButton);
 
-        mNoDevicesTextView = (TextView) findViewById(R.id.nodevicesTextView);
-        mDevicesScrollView = (ScrollView) findViewById(R.id.devicesScrollView);
+        mNoDevicesTextView = findViewById(R.id.nodevicesTextView);
+        mDevicesScrollView = findViewById(R.id.devicesScrollView);
         mDevicesScrollView.setVisibility(View.GONE);
 
-        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout);
+        mSwipeRefreshLayout = findViewById(R.id.swipeRefreshLayout);
         mSwipeRefreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
             public void onRefresh() {
                 mScannedDevices.clear();
-                startScan(null);
+                startScan();
 
                 mSwipeRefreshLayout.postDelayed(new Runnable() {
                     @Override
@@ -167,8 +149,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         });
 
 
-
-        mFiltersUartCheckBox = (CheckBox) findViewById(R.id.filtersUartCheckBox);
+        CheckBox mFiltersUartCheckBox = findViewById(R.id.filtersUartCheckBox);
         mFiltersUartCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -217,12 +198,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         requestLocationPermissionIfNeeded();
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
@@ -234,11 +209,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_help) {
             startHelp();
-            return true;
-        } else if (id == R.id.action_settings) {
-            Intent intent = new Intent();
-            intent.setClass(MainActivity.this, SettingsActivity.class);
-            startActivityForResult(intent, kActivityRequestCode_Settings);
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -267,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             if (mScannedDevices != null) {      // Fixed a weird bug when resuming the app (this was null on very rare occasions even if it should not be)
                 mScannedDevices.clear();
             }
-            startScan(null);
+            startScan();
         }
     }
 
@@ -392,29 +362,9 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
     private void resumeScanning() {
         if (mIsScanPaused) {
-            startScan(null);
+            startScan();
             mIsScanPaused = mScanner == null;
         }
-    }
-
-    private void showChooseDeviceServiceDialog(final BluetoothDeviceData deviceData) {
-        // Prepare dialog
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        String title = String.format(getString(R.string.scan_connectto_dialog_title_format), deviceData.getNiceName());
-        String[] item = new String[1];
-            item[0]= getString(kComponentsNameId);
-
-        builder.setTitle(title)
-                .setItems(item, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        mComponentToStartWhenConnected = UartActivity.class;
-                        connect(deviceData.device);            // First connect to the device, and when connected go to selected activity
-                    }
-                });
-
-        // Show dialog
-        AlertDialog dialog = builder.create();
-        dialog.show();
     }
 
     private boolean manageBluetoothAvailability() {
@@ -593,7 +543,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         ArrayList<BluetoothDeviceData> filteredPeripherals = mPeripheralList.filteredPeripherals(false);
         if (scannedDeviceIndex < filteredPeripherals.size()) {
             mSelectedDeviceData = filteredPeripherals.get(scannedDeviceIndex);
-            BluetoothDevice device = mSelectedDeviceData.device;
 
             mBleManager.setBleListener(MainActivity.this);           // Force set listener (could be still checking for updates...)
             mComponentToStartWhenConnected = UartActivity.class;
@@ -608,13 +557,13 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         if (isScanning) {
             stopScanning();
         } else {
-            startScan(null);
+            startScan();
         }
     }
     // endregion
 
     // region Scan
-    private void startScan(final UUID[] servicesToScan) {
+    private void startScan() {
         Log.d(TAG, "startScan");
 
         // Stop current scanning (if needed)
@@ -625,7 +574,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         if (BleUtils.getBleStatus(this) != BleUtils.STATUS_BLE_ENABLED) {
             Log.w(TAG, "startScan: BluetoothAdapter not initialized or unspecified address.");
         } else {
-            mScanner = new BleDevicesScanner(bluetoothAdapter, servicesToScan, new BluetoothAdapter.LeScanCallback() {
+            mScanner = new BleDevicesScanner(bluetoothAdapter, null, new BluetoothAdapter.LeScanCallback() {
                 @Override
                 public void onLeScan(final BluetoothDevice device, final int rssi, byte[] scanRecord) {
                     //final String deviceName = device.getName();
@@ -722,14 +671,12 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             offset += 2 * 2;   // major, minor
 
             // Read txpower
-            final int txPower = advertisedData[offset++];
-            deviceData.txPower = txPower;
+            deviceData.txPower = (int) advertisedData[offset++];
         } else if (isUriBeacon) {
             deviceData.type = BluetoothDeviceData.kType_UriBeacon;
 
             // Read txpower
-            final int txPower = advertisedData[9];
-            deviceData.txPower = txPower;
+            deviceData.txPower = (int) advertisedData[9];
         } else {
             // Read standard advertising packet
             while (offset < advertisedData.length - 2) {
@@ -792,8 +739,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                     }
 
                     case 0x0A: {        // TX Power
-                        final int txPower = advertisedData[offset++];
-                        deviceData.txPower = txPower;
+                        deviceData.txPower = (int) advertisedData[offset++];
                         break;
                     }
 
@@ -1019,7 +965,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         mLatestCheckedDeviceAddress = null;
 
         mScannedDevices.clear();
-        startScan(null);
+        startScan();
     }
 
     @Override
@@ -1029,7 +975,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         Toast.makeText(this, R.string.scan_softwareupdate_completed, Toast.LENGTH_LONG).show();
 
         mScannedDevices.clear();
-        startScan(null);
+        startScan();
     }
 
     @Override
@@ -1040,7 +986,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         mLatestCheckedDeviceAddress = null;
 
         mScannedDevices.clear();
-        startScan(null);
+        startScan();
     }
 
     @Override
@@ -1055,7 +1001,7 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
                 mLatestCheckedDeviceAddress = null;
 
                 mScannedDevices.clear();
-                startScan(null);
+                startScan();
             }
         });
     }
@@ -1108,22 +1054,10 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
     // region Peripheral List
     private class PeripheralList {
         // Constants
-        private final static int kMaxRssiValue = -100;
-
         private final static String kPreferences = "PeripheralList_prefs";
-        private final static String kPreferences_filtersName = "filtersName";
-        private final static String kPreferences_filtersIsNameExact = "filtersIsNameExact";
-        private final static String kPreferences_filtersIsNameCaseInsensitive = "filtersIsNameCaseInsensitive";
-        private final static String kPreferences_filtersRssi = "filtersRssi";
-        private final static String kPreferences_filtersUnnamedEnabled = "filtersUnnamedEnabled";
         private final static String kPreferences_filtersUartEnabled = "filtersUartEnabled";
 
         // Data
-        private String mFilterName;
-        private boolean mIsFilterNameExact;
-        private boolean mIsFilterNameCaseInsensitive;
-        private int mRssiFilterValue;
-        private boolean mIsUnnamedEnabled;
         private boolean mIsOnlyUartEnabled;
         private ArrayList<BluetoothDeviceData> mCachedFilteredPeripheralList;
         private boolean mIsFilterDirty;
@@ -1135,74 +1069,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             mCachedFilteredPeripheralList = new ArrayList<>();
 
             SharedPreferences preferences = getSharedPreferences(kPreferences, MODE_PRIVATE);
-            mFilterName = preferences.getString(kPreferences_filtersName, null);
-            mIsFilterNameExact = preferences.getBoolean(kPreferences_filtersIsNameExact, false);
-            mIsFilterNameCaseInsensitive = preferences.getBoolean(kPreferences_filtersIsNameCaseInsensitive, true);
-            mRssiFilterValue = preferences.getInt(kPreferences_filtersRssi, kMaxRssiValue);
-            mIsUnnamedEnabled = preferences.getBoolean(kPreferences_filtersUnnamedEnabled, true);
             mIsOnlyUartEnabled = preferences.getBoolean(kPreferences_filtersUartEnabled, false);
         }
-
-        String getFilterName() {
-            return mFilterName;
-        }
-
-        void setFilterName(String name) {
-            mFilterName = name;
-            mIsFilterDirty = true;
-
-            preferencesEditor.putString(kPreferences_filtersName, name);
-            preferencesEditor.apply();
-        }
-
-        boolean isFilterNameExact() {
-            return mIsFilterNameExact;
-        }
-
-        void setFilterNameExact(boolean exact) {
-            mIsFilterNameExact = exact;
-            mIsFilterDirty = true;
-
-            preferencesEditor.putBoolean(kPreferences_filtersIsNameExact, exact);
-            preferencesEditor.apply();
-        }
-
-        boolean isFilterNameCaseInsensitive() {
-            return mIsFilterNameCaseInsensitive;
-        }
-
-        void setFilterNameCaseInsensitive(boolean caseInsensitive) {
-            mIsFilterNameCaseInsensitive = caseInsensitive;
-            mIsFilterDirty = true;
-
-            preferencesEditor.putBoolean(kPreferences_filtersIsNameCaseInsensitive, caseInsensitive);
-            preferencesEditor.apply();
-        }
-
-        int getFilterRssiValue() {
-            return mRssiFilterValue;
-        }
-
-        void setFilterRssiValue(int value) {
-            mRssiFilterValue = value;
-            mIsFilterDirty = true;
-
-            preferencesEditor.putInt(kPreferences_filtersRssi, value);
-            preferencesEditor.apply();
-        }
-
-        boolean isFilterUnnamedEnabled() {
-            return mIsUnnamedEnabled;
-        }
-
-        void setFilterUnnamedEnabled(boolean enabled) {
-            mIsUnnamedEnabled = enabled;
-            mIsFilterDirty = true;
-
-            preferencesEditor.putBoolean(kPreferences_filtersUnnamedEnabled, enabled);
-            preferencesEditor.apply();
-        }
-
 
         boolean isFilterOnlyUartEnabled() {
             return mIsOnlyUartEnabled;
@@ -1214,20 +1082,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
             preferencesEditor.putBoolean(kPreferences_filtersUartEnabled, enabled);
             preferencesEditor.apply();
-        }
-
-
-        void setDefaultFilters() {
-            mFilterName = null;
-            mIsFilterNameExact = false;
-            mIsFilterNameCaseInsensitive = true;
-            mRssiFilterValue = kMaxRssiValue;
-            mIsUnnamedEnabled = true;
-            mIsOnlyUartEnabled = false;
-        }
-
-        boolean isAnyFilterEnabled() {
-            return (mFilterName != null && !mFilterName.isEmpty()) || mRssiFilterValue > kMaxRssiValue || mIsOnlyUartEnabled || !mIsUnnamedEnabled;
         }
 
         ArrayList<BluetoothDeviceData> filteredPeripherals(boolean forceUpdate) {
@@ -1264,43 +1118,6 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
             }
 
             return peripherals;
-        }
-
-        String filtersDescription() {
-            String filtersTitle = null;
-
-            if (mFilterName != null && !mFilterName.isEmpty()) {
-                filtersTitle = mFilterName;
-            }
-
-            if (mRssiFilterValue > kMaxRssiValue) {
-                String rssiString = String.format(Locale.ENGLISH, getString(R.string.scan_filters_name_rssi_format), mRssiFilterValue);
-                if (filtersTitle != null && !filtersTitle.isEmpty()) {
-                    filtersTitle = filtersTitle + ", " + rssiString;
-                } else {
-                    filtersTitle = rssiString;
-                }
-            }
-
-            if (!mIsUnnamedEnabled) {
-                String namedString = getString(R.string.scan_filters_name_named);
-                if (filtersTitle != null && !filtersTitle.isEmpty()) {
-                    filtersTitle = filtersTitle + ", " + namedString;
-                } else {
-                    filtersTitle = namedString;
-                }
-            }
-
-            if (mIsOnlyUartEnabled) {
-                String uartString = getString(R.string.scan_filters_name_uart);
-                if (filtersTitle != null && !filtersTitle.isEmpty()) {
-                    filtersTitle = filtersTitle + ", " + uartString;
-                } else {
-                    filtersTitle = uartString;
-                }
-            }
-
-            return filtersTitle;
         }
     }
 
@@ -1480,11 +1297,11 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
 
                 holder = new GroupViewHolder();
 
-                holder.nameTextView = (TextView) convertView.findViewById(R.id.nameTextView);
-                holder.descriptionTextView = (TextView) convertView.findViewById(R.id.descriptionTextView);
-                holder.rssiImageView = (ImageView) convertView.findViewById(R.id.rssiImageView);
-                holder.rssiTextView = (TextView) convertView.findViewById(R.id.rssiTextView);
-                holder.connectButton = (Button) convertView.findViewById(R.id.connectButton);
+                holder.nameTextView = convertView.findViewById(R.id.nameTextView);
+                holder.descriptionTextView = convertView.findViewById(R.id.descriptionTextView);
+                holder.rssiImageView = convertView.findViewById(R.id.rssiImageView);
+                holder.rssiTextView = convertView.findViewById(R.id.rssiTextView);
+                holder.connectButton = convertView.findViewById(R.id.connectButton);
 
                 convertView.setTag(R.string.scan_tag_id, holder);
 

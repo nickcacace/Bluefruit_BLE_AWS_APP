@@ -12,7 +12,6 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -36,7 +35,6 @@ public class BeaconActivity extends UartInterfaceActivity implements IBeaconFrag
     private final static int kOperation_BeaconTestMode = 3;
 
     private final static int kTab_iBeacon = 0;
-    private final static int kTab_uriBeacon = 1;
 
     private final static int kSendTimeout = 1000;   // in milliseconds
 
@@ -166,12 +164,7 @@ public class BeaconActivity extends UartInterfaceActivity implements IBeaconFrag
     }
 
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_beacon, menu);
-        return true;
-    }
+
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

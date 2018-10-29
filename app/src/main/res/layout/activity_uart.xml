@@ -104,15 +104,6 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:onClick="onClickCopy"
-                android:text="@string/uart_copy"
-                android:textColor="@drawable/default_textcolor" />
-
-            <Button
-                style="?android:attr/borderlessButtonStyle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
                 android:onClick="onClickGraph"
                 android:text="Graph"
                 android:textColor="@drawable/default_textcolor" />

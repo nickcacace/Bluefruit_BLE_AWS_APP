@@ -32,12 +32,19 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 import com.adafruit.bluefruit.le.connect.R;
-import com.adafruit.bluefruit.le.connect.app.settings.MqttUartSettingsActivity;
 import com.adafruit.bluefruit.le.connect.app.settings.PreferencesFragment;
 import com.adafruit.bluefruit.le.connect.ble.BleManager;
 import com.adafruit.bluefruit.le.connect.ble.BleUtils;
 import com.adafruit.bluefruit.le.connect.mqtt.MqttManager;
 import com.adafruit.bluefruit.le.connect.mqtt.MqttSettings;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.mobile.client.AWSMobileClient;
+import com.amazonaws.mobile.client.AWSStartupHandler;
+import com.amazonaws.mobile.client.AWSStartupResult;
+import com.amazonaws.mobile.config.AWSConfiguration;
+import com.amazonaws.mobileconnectors.dynamodbv2.dynamodbmapper.DynamoDBMapper;
+import com.amazonaws.models.nosql.BMSTESTDATADO;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
@@ -101,6 +108,9 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
     };
     private boolean isUITimerRunning = false;
 
+    public static final int kPublishFeed_RX = 0;
+    public static final int kPublishFeed_TX = 1;
+
     // Data
     private boolean mShowDataInHexFormat;
     private boolean mIsTimestampDisplayMode;
@@ -119,10 +129,32 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
 
     private int maxPacketsToPaintAsText;
 
+    private DynamoDBMapper dynamoDBMapper;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_uart);
+
+        AWSMobileClient.getInstance().initialize(this, new AWSStartupHandler() {
+            public void onComplete(AWSStartupResult awsStartupResult) {
+                Log.d("YourMainActivity", "AWSMobileClient is instantiated and you are connected to AWS!");
+            }
+        }).execute();
+
+        AWSCredentialsProvider credentialsProvider = AWSMobileClient.getInstance().getCredentialsProvider();
+        AWSConfiguration configuration = AWSMobileClient.getInstance().getConfiguration();
+
+
+        // Add code to instantiate a AmazonDynamoDBClient
+        AmazonDynamoDBClient dynamoDBClient = new AmazonDynamoDBClient(credentialsProvider);
+
+
+
+        this.dynamoDBMapper = DynamoDBMapper.builder()
+                .dynamoDBClient(dynamoDBClient)
+                .awsConfiguration(configuration)
+                .build();
 
         mBleManager = BleManager.getInstance(this);
         restoreRetainedDataFragment();
@@ -259,6 +291,9 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
 
     public void onClickSend(View view) {
         String data = mSendEditText.getText().toString();
+        double double_data = Integer.parseInt(data);
+
+        createTest(double_data);
         mSendEditText.setText("");       // Clear editText
 
         uartSendData(data, false);
@@ -269,8 +304,8 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         MqttSettings settings = MqttSettings.getInstance(UartActivity.this);
         if (!wasReceivedFromMqtt) {
             if (settings.isPublishEnabled()) {
-                String topic = settings.getPublishTopic(MqttUartSettingsActivity.kPublishFeed_TX);
-                final int qos = settings.getPublishQos(MqttUartSettingsActivity.kPublishFeed_TX);
+                String topic = settings.getPublishTopic(kPublishFeed_TX);
+                final int qos = settings.getPublishQos(kPublishFeed_TX);
                 mMqttManager.publish(topic, data, qos);
             }
         }
@@ -482,11 +517,6 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
                 }
                 break;
 
-            case R.id.action_mqttsettings:
-                Intent intent = new Intent(this, MqttUartSettingsActivity.class);
-                startActivityForResult(intent, kActivityRequestCode_MqttSettingsActivity);
-                break;
-
             case R.id.action_displaymode_timestamp:
                 setDisplayFormatToTimestamp(true);
                 recreateDataView();
@@ -600,8 +630,8 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
                 // MQTT publish to RX
                 MqttSettings settings = MqttSettings.getInstance(UartActivity.this);
                 if (settings.isPublishEnabled()) {
-                    String topic = settings.getPublishTopic(MqttUartSettingsActivity.kPublishFeed_RX);
-                    final int qos = settings.getPublishQos(MqttUartSettingsActivity.kPublishFeed_RX);
+                    String topic = settings.getPublishTopic(kPublishFeed_RX);
+                    final int qos = settings.getPublishQos(kPublishFeed_RX);
                     final String text = BleUtils.bytesToText(bytes, false);
                     mMqttManager.publish(topic, text, qos);
                 }
@@ -706,6 +736,24 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
             mTextSpanBuffer.clear();
             mBufferTextView.setText("");
         }
+    }
+
+    // region AWS
+
+    public void createTest(double value) {
+        final BMSTESTDATADO testItem = new BMSTESTDATADO();
+
+        testItem.setVALUE(value);
+
+        testItem.setTIME((double)System.currentTimeMillis());
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                dynamoDBMapper.save(testItem);
+                // Item saved
+            }
+        }).start();
     }
 
 
