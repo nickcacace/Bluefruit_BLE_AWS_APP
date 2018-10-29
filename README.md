@@ -7,6 +7,8 @@ communications over BLE (802.15.4) and upload this data to Amazon Web Service's 
 Current functionality of the app includes:
  - Connecting to beacon BLE devices advertising connection
  - Collect UART data and display it on a serial monitor
+ - Send data to an AWS Database using the "Send" button in the UART Terminal
+ 
 
 ## License
 
