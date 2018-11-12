@@ -35,8 +35,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseExpandableListAdapter;
 import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.ExpandableListView;
 import android.widget.ImageView;
 import android.widget.ScrollView;
@@ -149,18 +147,9 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         });
 
 
-        CheckBox mFiltersUartCheckBox = findViewById(R.id.filtersUartCheckBox);
-        mFiltersUartCheckBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                mPeripheralList.setFilterOnlyUartEnabled(isChecked);
-                mScannedDevicesAdapter.notifyDataSetChanged();
-            }
+        mPeripheralList.setFilterOnlyUartEnabled(true);
 
 
-        });
-        // Filters
-        mFiltersUartCheckBox.setChecked(mPeripheralList.isFilterOnlyUartEnabled());
         // Setup when activity is created for the first time
         if (savedInstanceState == null) {
             // Read preferences
@@ -204,14 +193,8 @@ public class MainActivity extends AppCompatActivity implements BleManager.BleMan
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_help) {
-            startHelp();
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
+        return true;
     }
 
     @Override

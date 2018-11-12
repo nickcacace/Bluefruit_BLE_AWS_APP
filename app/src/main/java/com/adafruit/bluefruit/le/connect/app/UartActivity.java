@@ -33,6 +33,7 @@ import android.widget.TextView;
 
 import com.adafruit.bluefruit.le.connect.R;
 import com.adafruit.bluefruit.le.connect.app.settings.PreferencesFragment;
+import com.adafruit.bluefruit.le.connect.app.update.AwsActivity;
 import com.adafruit.bluefruit.le.connect.ble.BleManager;
 import com.adafruit.bluefruit.le.connect.ble.BleUtils;
 import com.adafruit.bluefruit.le.connect.mqtt.MqttManager;
@@ -43,7 +44,6 @@ import com.amazonaws.mobile.client.AWSStartupHandler;
 import com.amazonaws.mobile.client.AWSStartupResult;
 import com.amazonaws.mobile.config.AWSConfiguration;
 import com.amazonaws.mobileconnectors.dynamodbv2.dynamodbmapper.DynamoDBMapper;
-import com.amazonaws.models.nosql.BMSTESTDATADO;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClient;
 
 import org.eclipse.paho.client.mqttv3.MqttMessage;
@@ -293,7 +293,6 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         String data = mSendEditText.getText().toString();
         double double_data = Integer.parseInt(data);
 
-        createTest(double_data);
         mSendEditText.setText("");       // Clear editText
 
         uartSendData(data, false);
@@ -391,6 +390,11 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         updateUI();
     }
 
+    public void onClickAWS(View view){
+        Intent intent = new Intent(UartActivity.this,AwsActivity.class);
+        startActivity(intent);
+    }
+
     public void onClickGraph(View view){
         Intent intent = new Intent(UartActivity.this,GraphAcitivity.class);
         intent.putExtra("Xdata", data_1);
@@ -411,7 +415,6 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         getMenuInflater().inflate(R.menu.menu_uart, menu);
 
         // Mqtt
-        mMqttMenuItem = menu.findItem(R.id.action_mqttsettings);
         mMqttMenuItemAnimationHandler = new Handler();
         mMqttMenuItemAnimationRunnable.run();
 
@@ -738,23 +741,7 @@ public class UartActivity extends UartInterfaceActivity implements MqttManager.M
         }
     }
 
-    // region AWS
 
-    public void createTest(double value) {
-        final BMSTESTDATADO testItem = new BMSTESTDATADO();
-
-        testItem.setVALUE(value);
-
-        testItem.setTIME((double)System.currentTimeMillis());
-
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                dynamoDBMapper.save(testItem);
-                // Item saved
-            }
-        }).start();
-    }
 
 
     // region DataFragment
