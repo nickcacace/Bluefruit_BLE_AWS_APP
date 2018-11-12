@@ -117,6 +117,15 @@
                 android:text="@string/uart_clear"
                 android:textColor="@drawable/default_textcolor" />
 
+            <Button
+                style="?android:attr/borderlessButtonStyle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:onClick="onClickAWS"
+                android:text="@string/uart_aws_data"
+                android:textColor="@drawable/default_textcolor" />
+
         </LinearLayout>
     </LinearLayout>
 

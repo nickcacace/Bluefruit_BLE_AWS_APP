@@ -92,7 +92,6 @@
     <string name="scan_filters_onlyuart">Must have UART service</string>
 
 
-
     <string-array name="scan_devicetypes">
         <item>Unkown</item>
         <item>UART capable</item>
@@ -138,6 +137,7 @@
     <string name="uart_copy">Copy</string>
     <string name="uart_share">Share</string>
     <string name="uart_clear">Clear</string>
+    <string name="uart_aws_data">AWS Data</string>
     <string name="uart_send">SEND</string>
 
     <string name="uart_share_subject">UART</string>
@@ -149,6 +149,13 @@
     <string name="uart_receivedbytes_format">Received: %d bytes</string>
 
     <string name="uart_text_dataomitted">(Previous data omitted to improve performance…)</string>
+
+
+    <!-- AWS Activity -->
+
+    <string name="aws_send">SEND</string>
+    <string name="aws_refresh">Refresh</string>
+    <string name="aws_readdata_format">Value: %d </string>
 
     <!-- PinIO Activity -->
     <string name="title_activity_pin_io">PinIO</string>
